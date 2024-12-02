@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Juego 3D - Cajas</title>
+    <style>
+        body { margin: 0; overflow: hidden; }
+        #vidas { position: absolute; top: 20px; left: 20px; color: white; font-size: 24px; font-weight: bold; }
+        .game-over { color: red; font-size: 30px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div id="vidas">Vidas restantes: 5</div>
+    
+    <!-- Incluir Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <script>
+        // Variables del juego
+        let vidas = 5;
+        let gameOver = false;
+        let cajas = [];
+        let cajaSpeed = 0.1;  // Velocidad de caída de las cajas
+        let playerSpeed = 0.1;  // Velocidad del jugador (cubo)
+
+        // Variables de Three.js
+        let scene, camera, renderer, player, raycaster, mouse;
+        
+        // Configurar la escena de Three.js
+        function init() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            // Crear el jugador (un cubo)
+            const geometry = new THREE.BoxGeometry(1, 1, 1);
+            const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+            player = new THREE.Mesh(geometry, material);
+            player.position.y = -5;
+            scene.add(player);
+
+            // Crear las cajas que caen
+            raycaster = new THREE.Raycaster();
+            mouse = new THREE.Vector2();
+
+            camera.position.z = 10;
+
+            // Detectar eventos de mouse
+            window.addEventListener('mousemove', onMouseMove, false);
+            window.addEventListener('click', onMouseClick, false);
+
+            // Iniciar el juego
+            animate();
+        }
+
+        // Actualizar la posición del jugador con el mouse
+        function onMouseMove(event) {
+            if (!gameOver) {
+                mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+                mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
+                player.position.x = mouse.x * 5; // Mover el jugador en el eje X
+            }
+        }
+
+        // Detectar si se hizo clic sobre una caja
+        function onMouseClick() {
+            if (gameOver) return;
+
+            raycaster.updateMatrixWorld();
+            raycaster.ray.origin.copy(camera.position);
+            raycaster.ray.direction.set(mouse.x * 5, mouse.y * 5, -5);
+            
+            const intersects = raycaster.intersectObjects(cajas);
+            if (intersects.length > 0) {
+                const intersected = intersects[0].object;
+                scene.remove(intersected);  // Eliminar la caja tocada
+                cajas = cajas.filter(caja => caja !== intersected);  // Eliminarla del array
+            }
+        }
+
+        // Crear nuevas cajas aleatorias
+        function createBox() {
+            if (gameOver) return;
+
+            const geometry = new THREE.BoxGeometry(1, 1, 1);
+            const material = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+            const box = new THREE.Mesh(geometry, material);
+            box.position.x = Math.random() * 6 - 3;  // Posición aleatoria en el eje X
+            box.position.y = 10;  // Comienza en la parte superior
+            box.position.z = 0;
+            scene.add(box);
+            cajas.push(box);
+        }
+
+        // Actualizar las cajas que caen
+        function updateBoxes() {
+            if (gameOver) return;
+
+            for (let i = cajas.length - 1; i >= 0; i--) {
+                const box = cajas[i];
+                box.position.y -= cajaSpeed;
+                
+                // Verificar si la caja toca al jugador
+                if (box.position.y <= player.position.y + 1 && box.position.x >= player.position.x - 0.5 && box.position.x <= player.position.x + 0.5) {
+                    vidas--;
+                    scene.remove(box);
+                    cajas.splice(i, 1);  // Eliminar la caja de la lista
+                    updateLives();
+                }
+
+                // Si la caja cae fuera de la pantalla
+                if (box.position.y < -5) {
+                    scene.remove(box);
+                    cajas.splice(i, 1);
+                }
+            }
+        }
+
+        // Actualizar el contador de vidas
+        function updateLives() {
+            const vidasElement = document.getElementById('vidas');
+            if (vidas > 0) {
+                vidasElement.innerHTML = `Vidas restantes: ${vidas}`;
+            } else {
+                vidasElement.innerHTML = '¡Game Over!';
+                vidasElement.classList.add('game-over');
+                gameOver = true;
+            }
+        }
+
+        // Animar el juego
+        function animate() {
+            if (gameOver) return;
+
+            requestAnimationFrame(animate);
+            updateBoxes();
+            renderer.render(scene, camera);
+        }
+
+        // Crear cajas cada 2 segundos
+        setInterval(createBox, 2000);
+
+        // Iniciar el juego
+        init();
+    </script>
+
+</body>
+</html>

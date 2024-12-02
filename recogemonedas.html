@@ -19,19 +19,13 @@
             <a-text id="time" value="60" position="-5.5 2.5 -3.5" scale="2 2 2" color="red"></a-text>
             <a-text id="vidas" value="5" position="5.2 2.5 -3.5" scale="2 2 2" color="green"></a-text> 
         </a-camera>
+        <a-entity oculus-touch-controls="hand: left"></a-entity>
+        <a-entity oculus-touch-controls="hand: right"></a-entity>
     </a-scene>
     <script>
         let vidas = 5;
         let cajaSpeed = 0.1;
         let playerSpeed = 0.1;
-        window.addEventListener('mousemove', onMouseMove, false);
-        window.addEventListener('click', onMouseClick, false);
-        const intersects = raycaster.intersectObjects(cajas);
-            if (intersects.length > 0) {
-                const intersected = intersects[0].object;
-                scene.remove(intersected);  // Eliminar la caja tocada
-                cajas = cajas.filter(caja => caja !== intersected);  // Eliminarla del array
-            }
         document.getElementById("caja").addEventListener("mouseenter",function(event){
             this.setAttribute("color", "red");
         });
